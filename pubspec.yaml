@@ -41,7 +41,12 @@ dependencies:
   firebase_database: ^11.3.0
   cloud_firestore: ^5.6.1
   firebase_auth: ^5.4.0
-  permission_handler: ^11.3.1
+  permission_handler: ^10.2.0
+  flutter_libphonenumber: ^2.5.0
+  intl_phone_number_input: ^0.7.4
+
+
+
 
 dev_dependencies:
   flutter_test:
@@ -52,7 +57,7 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^4.0.0
+  flutter_lints: ^5.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
