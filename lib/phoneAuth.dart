@@ -1,8 +1,9 @@
 import 'dart:developer';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:intl_phone_number_input/intl_phone_number_input.dart'; // Import for country code selection
-
+import 'package:get/get.dart';
+import 'package:intl_phone_number_input/intl_phone_number_input.dart';
+import 'package:pmpml_app/constant/constant_ui.dart';
 import 'otpScreen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -14,154 +15,133 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final phoneController = TextEditingController();
-  PhoneNumber number = PhoneNumber(isoCode: 'IN');  // Default to India (can change)
-  bool isloading = false;
+  PhoneNumber number = PhoneNumber(isoCode: 'IN');
+  bool isLoading = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 30),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              "Phone Authentication",
-              style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 40),
-            // Phone input field with country code
-            InternationalPhoneNumberInput(
-              onInputChanged: (PhoneNumber phone) {
-                setState(() {
-                  number = phone;  // Update the phone number and country code
-                });
-              },
-              onInputValidated: (bool isValid) {
-                // Handle phone number validation status
-              },
-              selectorConfig: SelectorConfig(
-                selectorType: PhoneInputSelectorType.DROPDOWN,
-                setSelectorButtonAsPrefixIcon: true,
-              ),
-              initialValue: number,
-              textFieldController: phoneController,
-              inputDecoration: InputDecoration(
-                fillColor: Colors.grey.withOpacity(0.25),
-                filled: true,
-                hintText: "Enter Phone",
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30),
-                    borderSide: BorderSide.none),
-              ),
-            ),
-            const SizedBox(height: 20),
-            isloading
-                ? const CircularProgressIndicator()
-                : ElevatedButton(
-              onPressed: () async {
-                setState(() {
-                  isloading = true;
-                });
+      body: GradientBackground(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 30),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  "phone_authentication".tr, // Using translation key
+                  style: titleTextStyle,
+                ),
+                const SizedBox(height: 40),
 
-                // Get the phone number (including country code)
-                String phoneNumber = number.phoneNumber ?? '';
-                if (phoneNumber.isEmpty || number.phoneNumber == null) {
-                  setState(() {
-                    isloading = false;
-                  });
-                  log('Phone number is invalid');
-                  showDialog(
-                    context: context,
-                    builder: (_) => AlertDialog(
-                      title: Text('Error'),
-                      content: Text('Please enter a valid phone number.'),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                          child: Text('OK'),
-                        ),
-                      ],
-                    ),
-                  );
-                  return; // Do not proceed if phone number is invalid
-                }
+                // Phone number input
+                InternationalPhoneNumberInput(
+                  onInputChanged: (PhoneNumber phone) {
+                    setState(() {
+                      number = phone;
+                    });
+                  },
+                  selectorConfig: const SelectorConfig(
+                    selectorType: PhoneInputSelectorType.DROPDOWN,
+                    setSelectorButtonAsPrefixIcon: true,
+                  ),
+                  initialValue: number,
+                  textFieldController: phoneController,
+                  inputDecoration: inputDecorationStyle.copyWith(
+                    hintText: "enter_phone".tr, // Using translation key
+                  ),
+                ),
+                const SizedBox(height: 20),
 
-                try {
-                  // Verify phone number via Firebase Auth
-                  await FirebaseAuth.instance.verifyPhoneNumber(
-                    phoneNumber: phoneNumber,
-                    verificationCompleted: (phoneAuthCredential) {
-                      // This is triggered if phone number is auto-verified
-                    },
-                    verificationFailed: (error) {
-                      log(error.toString());
-                      setState(() {
-                        isloading = false;
-                      });
-                      showDialog(
-                        context: context,
-                        builder: (_) => AlertDialog(
-                          title: Text('Error'),
-                          content: Text(error.message ?? 'Unknown error'),
-                          actions: [
-                            TextButton(
-                              onPressed: () {
-                                Navigator.pop(context);
+                // Sign-in button
+                isLoading
+                    ? const CircularProgressIndicator()
+                    : ElevatedButton(
+                        onPressed: () async {
+                          setState(() {
+                            isLoading = true;
+                          });
+
+                          String phoneNumber = number.phoneNumber ?? '';
+
+                          // Only show GetX message for invalid numbers
+                          if (phoneNumber.length < 10) {
+                            setState(() {
+                              isLoading = false;
+                            });
+                            Get.snackbar(
+                              "invalid_number".tr, // Using translation key
+                              "enter_valid_number".tr, // Using translation key
+                              snackPosition: SnackPosition.TOP,
+                              backgroundColor: Colors.red,
+                              colorText: Colors.white,
+                              duration: const Duration(seconds: 2),
+                            );
+                            return;
+                          }
+
+                          // Continue if valid number
+                          try {
+                            await FirebaseAuth.instance.verifyPhoneNumber(
+                              phoneNumber: phoneNumber,
+                              verificationCompleted: (phoneAuthCredential) {},
+                              verificationFailed: (error) {
+                                log(error.toString());
+                                setState(() {
+                                  isLoading = false;
+                                });
+                                Get.snackbar(
+                                  "error".tr, // Using translation key
+                                  error.message ?? 'unknown_error'.tr, // Using translation key
+                                  snackPosition: SnackPosition.TOP,
+                                  backgroundColor: Colors.red,
+                                  colorText: Colors.white,
+                                );
                               },
-                              child: Text('OK'),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                    codeSent: (verificationId, forceResendingToken) {
-                      setState(() {
-                        isloading = false;
-                      });
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => OTPScreen(
-                            verificationId: verificationId,
-                          ),
-                        ),
-                      );
-                    },
-                    codeAutoRetrievalTimeout: (verificationId) {
-                      log("Auto Retrieval timeout");
-                    },
-                  );
-                } catch (e) {
-                  setState(() {
-                    isloading = false;
-                  });
-                  log(e.toString());
-                  showDialog(
-                    context: context,
-                    builder: (_) => AlertDialog(
-                      title: Text('Error'),
-                      content: Text('An error occurred during phone verification.'),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                          child: Text('OK'),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-              },
-              child: const Text(
-                "Sign in",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
-              ),
+                              codeSent: (verificationId, forceResendingToken) {
+                                setState(() {
+                                  isLoading = false;
+                                });
+                                Get.snackbar(
+                                  "success".tr, // Using translation key
+                                  "otp_sent".tr, // Using translation key
+                                  snackPosition: SnackPosition.TOP,
+                                  backgroundColor: Colors.green,
+                                  colorText: Colors.white,
+                                );
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => OTPScreen(
+                                      verificationId: verificationId,
+                                    ),
+                                  ),
+                                );
+                              },
+                              codeAutoRetrievalTimeout: (verificationId) {
+                                log("Auto Retrieval timeout");
+                              },
+                            );
+                          } catch (e) {
+                            setState(() {
+                              isLoading = false;
+                            });
+                            log(e.toString());
+                            Get.snackbar(
+                              "error".tr, // Using translation key
+                              "unknown_error".tr, // Using translation key
+                              snackPosition: SnackPosition.TOP,
+                              backgroundColor: Colors.red,
+                              colorText: Colors.white,
+                            );
+                          }
+                        },
+                        style: primaryButtonStyle,
+                        child: Text("sign_in".tr), // Using translation key
+                      ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
