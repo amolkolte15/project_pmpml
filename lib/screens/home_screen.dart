@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:glow_bottom_app_bar/glow_bottom_app_bar.dart';
+import 'package:pmpml_app/screens/book_ticket.dart'; 
+
 import 'package:pmpml_app/MapScreen.dart';
 import 'package:pmpml_app/constant/constant_ui.dart';
 import 'package:pmpml_app/screens/place_suggestion.dart';
+import 'package:pmpml_app/screens/scanner_screen.dart';
 import 'package:pmpml_app/screens/ui.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -60,7 +62,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: SingleChildScrollView(
         child: GradientBackground(
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.only(bottom:16, right:16, left: 16),
             child: Column(
               children: [
                 const SizedBox(height: 20),
@@ -112,29 +114,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
+            
 
-                // Date of Journey with Buttons
-                Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 4,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.calendar_today, color: Colors.black54),
-                        const SizedBox(width: 10),
-                        Text('Mon 24-Feb', style: const TextStyle(fontSize: 16)),
-                        const Spacer(),
-                        _buildDateButton('Today', true),
-                        const SizedBox(width: 8),
-                        _buildDateButton('Tomorrow', false),
-                      ],
-                    ),
-                  ),
-                ),
+    
                 const SizedBox(height: 16),
 
                 // Booking for Women Toggle
@@ -199,53 +181,138 @@ ElevatedButton.icon(
     minimumSize: const Size(double.infinity, 50),
   ),
 ),
-                const SizedBox(height: 20),
+const SizedBox(height: 16),
 
-                // Additional Section
-                Container(
-                  height: 300,
-                ),
+// 2x3 Grid for Ticket and Bus Options
+// 2x3 Grid for Ticket and Bus Options
+GridView.count(
+  shrinkWrap: true,
+  physics: NeverScrollableScrollPhysics(), // Prevents scrolling inside GridView
+  crossAxisCount: 2,
+  mainAxisSpacing: 10,
+  crossAxisSpacing: 10,
+  childAspectRatio: 1.6, // Adjusted for smaller card size
+  children: [
+    _buildCard('Book Ticket', Icons.confirmation_number, Colors.red, () {
+      // Navigate to BookTicketScreen if origin and destination are selected
+      if (_fromPlace != null && _toPlace != null) {
+        // For demonstration, using a fixed fare of 15 from your JSON
+        // In a real app, you would calculate this based on the route
+        Get.to(() => BookTicketScreen(
+          fromPlace: _fromPlace,
+          toPlace: _toPlace,
+          totalFare: 15.0, // You could calculate this dynamically based on route
+        ));
+      } else {
+        // Show error message if locations aren't selected
+        Get.snackbar(
+          'Error',
+          'Please select both origin and destination locations',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+          borderRadius: 8,
+          duration: const Duration(seconds: 3),
+        );
+      }
+    }),
+    _buildCard('View Ticket', Icons.receipt_long, Colors.blue, () {
+      // Handle View Ticket action
+    }),
+    _buildCard('Bus Pass', Icons.card_membership, Colors.green, () {
+      // Handle Bus Pass action
+    }),
+    _buildCard('View Pass', Icons.credit_card, Colors.teal, () {
+      // Handle View Pass action
+    }),
+    
+     _buildCard('Scan Upcoming Bus', Icons.qr_code_scanner, Colors.purple, () {
+                      // Navigate to Scanner Screen
+                      Get.to(() =>  ScannerScreen());
+                    }),
+    _buildCard('city Routes', Icons.map, Colors.orange, () {
+      // Handle Routes action
+    }),
+  ],
+),
+
+   const SizedBox(height: 20),
+
               ],
             ),
           ),
         ),
       ),
-      bottomNavigationBar: GlowBottomAppBar(
-        height: 60,
-        onChange: (value) {
-          setState(() {
-            _currentIndex = value;
-          });
-          // Handle navigation based on index if needed
-          switch (value) {
-            case 0: // Home
-              break;
-            case 1: // Bookings
-              break;
-            case 2: // Help
-              break;
-            case 3: // My Account
-              break;
-          }
-        },
-        background: Colors.white,
-        iconSize: 24,
-        glowColor: Colors.red,
-        selectedChildren: const [
-          Icon(Icons.home, color: Colors.red),
-          Icon(Icons.book, color: Colors.red),
-          Icon(Icons.help, color: Colors.red),
-          Icon(Icons.person, color: Colors.red),
-        ],
-        children: const [
-          Icon(Icons.home, color: Colors.black54),
-          Icon(Icons.book, color: Colors.black54),
-          Icon(Icons.help, color: Colors.black54),
-          Icon(Icons.person, color: Colors.black54),
-        ],
-      ),
+bottomNavigationBar: BottomNavigationBar(
+  currentIndex: _currentIndex,
+  onTap: (index) {
+    setState((){
+      _currentIndex = index;
+    });
+    // Handle navigation based on index if needed
+    switch (index ) {
+      case 0: // Home
+        break;
+      case 1: // Bookings
+        break;
+      case 2: // Help
+        break;
+      case 3: // My Account  
+        break;
+    }
+  },
+  type: BottomNavigationBarType.fixed, // Important for more than 3 items
+  selectedItemColor: Colors.red,
+  unselectedItemColor: Colors.black54,
+  items: const [
+    BottomNavigationBarItem(
+      icon: Icon(Icons.home),
+      label: 'Home',
+    ),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.book),
+      label: 'Bookings',
+    ),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.help),
+      label: 'Help',
+    ),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.person),
+      label: 'Account',
+    ),
+  ],
+)
     );
   }
+  
+Widget _buildCard(String title, IconData icon, Color color, VoidCallback onTap) {
+  return GestureDetector(
+    onTap: onTap,
+    child: Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10), // Reduced border radius
+      ),
+      elevation: 3,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 35, color: color), // Reduced icon size
+            const SizedBox(height: 6),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
 
   // Widget for date buttons
   Widget _buildDateButton(String label, bool isSelected) {
